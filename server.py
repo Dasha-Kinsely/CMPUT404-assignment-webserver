@@ -68,17 +68,40 @@ class MyWebServer(socketserver.BaseRequestHandler):
             raise Err.UnkownError()
 
     def get_file(self, req_dir):
+        if ".html" in req_dir:
+            mimetype = 'text/html'
+        elif ".css" in req_dir:
+            mimetype = 'text/css'
+        elif req_dir[-1] == "/":
+            mimetype = 'text/html'
+            req_dir += "index.html"  # serves index in that folder
+        else:
+            print('Bad MimeType')
         try:  # the normal case
-            file = open(MyWebServer.source_dir+(req_dir).strip('/'), 'r')
+            f_name = MyWebServer.source_dir+(req_dir)
+            file = open(f_name, 'r')
             content = file.read()
             self.request.sendall(bytearray(
-                'HTTP/1.1 200 OK\r\n'+content, 'utf-8'))
+                self.res_header(200, 'OK', content, mimetype)+content, 'utf-8'))
+            file.close()
         except FileNotFoundError:
             raise Err.NotFoundError()
+
+    def res_header(self, status_code, status_desc, content, mimetype):
+        res_header_str = (
+            'HTTP/1.1 '+str(status_code) + ' ' + status_desc + '\r\n' +
+            'Content-Type: '+mimetype + '\r\n'
+        )
+        # print(res_header_str)
+        return res_header_str
 
 
 class Err():
     def Details(self, param):
+        print(param)
+
+    def E301(self):
+        self.Deatils("Moved Permenantly")
 
     def NotFoundError(self):
         self.Details('File not found....')
