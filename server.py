@@ -76,23 +76,27 @@ class MyWebServer(socketserver.BaseRequestHandler):
             mimetype = 'text/html'
             req_dir += "index.html"  # serves index in that folder
         else:
-            print('Bad MimeType')
+            mimetype = "text/html"
         try:  # the normal case
             f_name = MyWebServer.source_dir+(req_dir)
             file = open(f_name, 'r')
             content = file.read()
             self.request.sendall(bytearray(
-                self.res_header(200, 'OK', content, mimetype)+content, 'utf-8'))
+                (self.res_header(200, 'OK', mimetype)+content), 'utf-8'
+            ))
             file.close()
         except FileNotFoundError:
-            raise Err.NotFoundError()
+            self.request.sendall(bytearray(
+                (self.res_header(404, 'Not Found', mimetype) +
+                 "<html><body><h1 style = 'text-align:center'>404 NOT FOUND ERROR</h1></body></html>"), 'utf-8'
+            ))
 
-    def res_header(self, status_code, status_desc, content, mimetype):
+    def res_header(self, status_code, status_desc, mimetype):
         res_header_str = (
             'HTTP/1.1 '+str(status_code) + ' ' + status_desc + '\r\n' +
-            'Content-Type: '+mimetype + '\r\n'
+            'Content-Type: '+mimetype + '\r\n\r\n'
         )
-        # print(res_header_str)
+        print(res_header_str)
         return res_header_str
 
 
