@@ -28,7 +28,7 @@ import os
 
 # try: curl -v -X GET http://127.0.0.1:8080/
 
-# Copyright 2020 Yun Tai Liu
+# Copyright 2020 Yun Tai Liu, Tian Qi Wang
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import os
 
 
 class MyWebServer(socketserver.BaseRequestHandler):
-    source_dir = os.getcwd() + '/www/'
+    source_dir = os.getcwd() + '/www/'  # suggested by twang2(Tian Qi Wang)
 
     def handle(self):
         self.data = self.request.recv(1024).strip()
@@ -58,14 +58,12 @@ class MyWebServer(socketserver.BaseRequestHandler):
         method, req_dir, http_header = request.split()
         # print(method)||print(req_dir)||print(http_header)
         if method != 'GET':
-            raise Err.MethodForbiddenError()
-        elif http_header != 'HTTP/1.1':
-            raise Err.HeaderForbiddenError()
+            self.MethodForbiddenError()
         # Only happens if method and header are correct
-        elif (method == 'GET') and (http_header == 'HTTP/1.1'):
+        elif (method == 'GET'):
             self.get_file(req_dir)
         else:
-            raise Err.UnkownError()
+            return
 
     def get_file(self, req_dir):
         if ".html" in req_dir:
@@ -81,43 +79,35 @@ class MyWebServer(socketserver.BaseRequestHandler):
             f_name = MyWebServer.source_dir+(req_dir)
             file = open(f_name, 'r')
             content = file.read()
-            self.request.sendall(bytearray(
-                (self.res_header(200, 'OK', mimetype)+content), 'utf-8'
-            ))
+            self.finalize((self.res_header(200, 'OK', mimetype)+content))
             file.close()
         except FileNotFoundError:
-            self.request.sendall(bytearray(
-                (self.res_header(404, 'Not Found', mimetype) +
-                 "<html><body><h1 style = 'text-align:center'>404 NOT FOUND ERROR</h1></body></html>"), 'utf-8'
-            ))
+            content = "<html><body><h1 style = 'text-align:center'>404 NOT FOUND ERROR</h1></body></html>"
+            self.finalize(
+                (self.res_header(404, 'Not Found', mimetype)+content))
 
+    # helper method
     def res_header(self, status_code, status_desc, mimetype):
         res_header_str = (
             'HTTP/1.1 '+str(status_code) + ' ' + status_desc + '\r\n' +
             'Content-Type: '+mimetype + '\r\n\r\n'
         )
-        print(res_header_str)
+        # print(res_header_str)
         return res_header_str
+    # helper method
 
-
-class Err():
-    def Details(self, param):
-        print(param)
-
-    def E301(self):
-        self.Deatils("Moved Permenantly")
-
-    def NotFoundError(self):
-        self.Details('File not found....')
+    def finalize(self, b_array):
+        self.request.sendall(bytearray(
+            b_array, 'utf-8'
+        ))
 
     def MethodForbiddenError(self):
-        self.Details('You cannot post, delete or put!!!!')
-
-    def HeaderForbiddenError(self):
-        self.Details('Only http 1.1 is allowed')
-
-    def UnknownError(self):
-        self.Details("Error Unknown...")
+        details = self.res_header(
+            405, 'Method Not Allowed\r\n', 'text/html')
+        content = "<html><body><h1 style = 'text-align:center'>405 Method Not Allowed --- Only 'GET' is Allowed !!!</h1></body></html>"
+        feedback = details + content
+        print(feedback)
+        self.finalize(feedback)
 
 
 # DO NOT MODIFY
