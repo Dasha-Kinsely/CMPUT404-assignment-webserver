@@ -76,6 +76,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         elif "../../" in req_dir:
             self.finalize(
                 (self.res_header(404, 'Not Found', "text/html")))
+            return
         else:
             mimetype = 'text/html'
         # reference: https: // pythonexamples.org/python-check-if-path-is-file-or-directory/
