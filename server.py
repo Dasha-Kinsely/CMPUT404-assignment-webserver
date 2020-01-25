@@ -74,7 +74,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
             mimetype = 'text/html'
             req_dir += "index.html"  # serves index in that folder
         else:
-            mimetype = "text/html"
+            mimetype = 'text/html'
+        # reference: https: // pythonexamples.org/python-check-if-path-is-file-or-directory/
         try:  # the normal case
             f_name = MyWebServer.source_dir+(req_dir)
             file = open(f_name, 'r')
@@ -85,8 +86,16 @@ class MyWebServer(socketserver.BaseRequestHandler):
             content = "<html><body><h1 style = 'text-align:center'>404 NOT FOUND ERROR</h1></body></html>"
             self.finalize(
                 (self.res_header(404, 'Not Found', mimetype)+content))
-
+        except IsADirectoryError:
+            if req_dir[-1] != '/':
+                f_name = MyWebServer.source_dir+req_dir+'/index.html'
+                file = open(f_name)
+                content = file.read()
+                file.close()
+                self.finalize(
+                    (self.res_header(301, 'Moved Permanently', mimetype)+content))
     # helper method
+
     def res_header(self, status_code, status_desc, mimetype):
         res_header_str = (
             'HTTP/1.1 '+str(status_code) + ' ' + status_desc + '\r\n' +
@@ -103,11 +112,16 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
     def MethodForbiddenError(self):
         details = self.res_header(
-            405, 'Method Not Allowed\r\n', 'text/html')
+            405, 'Method Not Allowed', 'text/html')
         content = "<html><body><h1 style = 'text-align:center'>405 Method Not Allowed --- Only 'GET' is Allowed !!!</h1></body></html>"
         feedback = details + content
         print(feedback)
         self.finalize(feedback)
+
+    def Error301(self, directory):
+        details = self.res_header(
+            301, 'Moved Permanently\r\nRedireted to : '+directory+'\r\n', 'text/html')
+        self.finalize(details)
 
 
 # DO NOT MODIFY
