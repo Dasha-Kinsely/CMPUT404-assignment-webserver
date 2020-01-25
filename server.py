@@ -73,9 +73,14 @@ class MyWebServer(socketserver.BaseRequestHandler):
         elif req_dir[-1] == "/":
             mimetype = 'text/html'
             req_dir += "index.html"  # serves index in that folder
+        elif "../../" in req_dir:
+            self.finalize(
+                (self.res_header(404, 'Not Found', "text/html")))
         else:
             mimetype = 'text/html'
         # reference: https: // pythonexamples.org/python-check-if-path-is-file-or-directory/
+        '''if len(req_dir) > 25:
+            self.finalize(self.res_header(403, 'TEST GROUP', mimetype))'''
         try:  # the normal case
             f_name = MyWebServer.source_dir+(req_dir)
             file = open(f_name, 'r')
